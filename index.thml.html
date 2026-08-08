@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>法人カード利用記録</title>
+<style>
+  :root {
+    --bg: #0F1B2B;
+    --panel: #152438;
+    --panel2: #1A2A3D;
+    --border: #22344A;
+    --text: #EAEFF4;
+    --sub: #8FA3B8;
+    --muted: #4A5C70;
+    --accent: #C77B4A;
+    --accent-dark: #B36A3C;
+    --danger: #E08A6B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", sans-serif;
+    padding-bottom: 40px;
+  }
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 20px 16px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  .brand-label {
+    font-size: 13px;
+    color: var(--sub);
+    letter-spacing: 0.02em;
+  }
+  .month-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .month-btn {
+    background: none;
+    border: none;
+    color: var(--sub);
+    font-size: 22px;
+    padding: 8px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .month-btn:active { color: var(--text); }
+  .month-label {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .total-block { margin-top: 12px; }
+  .total-caption { font-size: 12px; color: var(--sub); margin-bottom: 2px; }
+  .total-amount {
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .cat-tags {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cat-tag {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--panel2);
+    color: #B8C6D6;
+    border: 1px solid var(--border);
+  }
+  .content { padding: 0 20px; }
+  .card {
+    background: var(--panel);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 16px;
+    margin-top: 20px;
+  }
+  .amount-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .yen-sign { font-size: 15px; color: var(--sub); }
+  input[type="number"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    outline: none;
+  }
+  input[type="number"]::placeholder { color: var(--muted); }
+  input[type="text"], input[type="date"] {
+    width: 100%;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    outline: none;
+    margin-bottom: 12px;
+  }
+  input[type="text"]::placeholder { color: var(--muted); }
+  input[type="date"] { color-scheme: dark; width: auto; }
+  .cats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .cat-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--sub);
+    cursor: pointer;
+  }
+  .cat-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 600;
+  }
+  .error-msg { font-size: 12px; color: var(--danger); margin-bottom: 8px; }
+  .add-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    color: var(--bg);
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .add-btn:active { background: var(--accent-dark); }
+  .list-caption { font-size: 12px; color: var(--sub); margin: 24px 0 8px 4px; }
+  .empty-state { text-align: center; padding: 48px 0; color: var(--muted); font-size: 13px; }
+  .entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+  .entry-main { flex: 1; min-width: 0; }
+  .entry-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .entry-date { font-size: 11px; color: var(--sub); }
+  .entry-cat {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--panel2);
+    color: #B8C6D6;
+  }
+  .entry-amount { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .entry-memo { font-size: 12px; color: var(--sub); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    padding: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+  .del-btn:active { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="brand">
+    <div class="brand-icon">💳</div>
+    <div class="brand-label">法人カード利用記録</div>
+  </div>
+  <div class="month-row">
+    <button class="month-btn" id="prevMonth">‹</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button class="month-btn" id="nextMonth">›</button>
+  </div>
+  <div class="total-block">
+    <div class="total-caption">今月の合計</div>
+    <div class="total-amount" id="monthTotal">¥0</div>
+  </div>
+  <div class="cat-tags" id="catTags"></div>
+</div>
+
+<div class="content">
+  <div class="card">
+    <div class="amount-row">
+      <span class="yen-sign">¥</span>
+      <input type="number" id="amountInput" placeholder="金額" inputmode="numeric" />
+    </div>
+    <input type="text" id="memoInput" placeholder="メモ(店名など・任意)" />
+    <input type="date" id="dateInput" />
+    <div class="cats" id="catButtons"></div>
+    <div class="error-msg" id="errorMsg" style="display:none;"></div>
+    <button class="add-btn" id="addBtn">＋ 記録する</button>
+  </div>
+
+  <div class="list-caption" id="listCaption"></div>
+  <div id="entryList"></div>
+</div>
+
+<script>
+const CATEGORIES = ["消耗品", "食材", "交通費", "通信費", "備品", "その他"];
+const STORAGE_KEY = "card-tracker-entries";
+
+let entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+let selectedCategory = CATEGORIES[0];
+
+function pad(n) { return String(n).padStart(2, "0"); }
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function monthKey(dateStr) { return dateStr.slice(0, 7); }
+function formatMonthLabel(ym) {
+  const [y, m] = ym.split("-");
+  return `${y}年${parseInt(m, 10)}月`;
+}
+function formatDateLabel(dateStr) {
+  const d = new Date(dateStr + "T00:00:00");
+  const days = ["日","月","火","水","木","金","土"];
+  return `${d.getMonth() + 1}/${d.getDate()}(${days[d.getDay()]})`;
+}
+
+let viewMonth = monthKey(todayStr());
+
+const dateInput = document.getElementById("dateInput");
+dateInput.value = todayStr();
+
+function renderCategoryButtons() {
+  const wrap = document.getElementById("catButtons");
+  wrap.innerHTML = "";
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "cat-btn" + (cat === selectedCategory ? " active" : "");
+    btn.textContent = cat;
+    btn.onclick = () => { selectedCategory = cat; renderCategoryButtons(); };
+    wrap.appendChild(btn);
+  });
+}
+
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function getMonthEntries() {
+  return entries
+    .filter(e => monthKey(e.date) === viewMonth)
+    .sort((a, b) => a.date === b.date ? b.createdAt - a.createdAt : b.date.localeCompare(a.date));
+}
+
+function render() {
+  document.getElementById("monthLabel").textContent = formatMonthLabel(viewMonth);
+  const monthEntries = getMonthEntries();
+  const total = monthEntries.reduce((s, e) => s + e.amount, 0);
+  document.getElementById("monthTotal").textContent = "¥" + total.toLocaleString();
+
+  const catMap = {};
+  monthEntries.forEach(e => { catMap[e.category] = (catMap[e.category] || 0) + e.amount; });
+  const catTags = document.getElementById("catTags");
+  catTags.innerHTML = "";
+  Object.entries(catMap).sort((a,b) => b[1]-a[1]).forEach(([cat, total]) => {
+    const tag = document.createElement("div");
+    tag.className = "cat-tag";
+    tag.textContent = `${cat} ¥${total.toLocaleString()}`;
+    catTags.appendChild(tag);
+  });
+
+  document.getElementById("listCaption").textContent = monthEntries.length > 0 ? `${monthEntries.length}件の記録` : "";
+
+  const list = document.getElementById("entryList");
+  list.innerHTML = "";
+  if (monthEntries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "この月の記録はまだありません";
+    list.appendChild(empty);
+    return;
+  }
+  monthEntries.forEach(e => {
+    const row = document.createElement("div");
+    row.className = "entry";
+    row.innerHTML = `
+      <div class="entry-main">
+        <div class="entry-meta">
+          <span class="entry-date">${formatDateLabel(e.date)}</span>
+          <span class="entry-cat">${e.category}</span>
+        </div>
+        <div class="entry-amount">¥${e.amount.toLocaleString()}</div>
+        ${e.memo ? `<div class="entry-memo">${escapeHtml(e.memo)}</div>` : ""}
+      </div>
+      <button class="del-btn" data-id="${e.id}">🗑</button>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll(".del-btn").forEach(btn => {
+    btn.onclick = () => {
+      entries = entries.filter(e => e.id !== btn.dataset.id);
+      persist();
+      render();
+    };
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById("prevMonth").onclick = () => {
+  const [y, m] = viewMonth.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  viewMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  render();
+};
+document.getElementById("nextMonth").onclick = () => {
+  const [y, m] = viewMonth.split("-").map(Number);
+  const d = new Date(y, m, 1);
+  viewMonth = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+  render();
+};
+
+document.getElementById("addBtn").onclick = () => {
+  const amountInput = document.getElementById("amountInput");
+  const memoInput = document.getElementById("memoInput");
+  const errorMsg = document.getElementById("errorMsg");
+  const val = parseFloat(amountInput.value);
+  if (!val || val <= 0) {
+    errorMsg.textContent = "金額を入力してください";
+    errorMsg.style.display = "block";
+    return;
+  }
+  errorMsg.style.display = "none";
+  const entry = {
+    id: Date.now() + "-" + Math.random().toString(36).slice(2, 8),
+    date: dateInput.value || todayStr(),
+    amount: val,
+    memo: memoInput.value.trim(),
+    category: selectedCategory,
+    createdAt: Date.now(),
+  };
+  entries.unshift(entry);
+  persist();
+  viewMonth = monthKey(entry.date);
+  amountInput.value = "";
+  memoInput.value = "";
+  render();
+};
+
+renderCategoryButtons();
+render();
+</script>
+
+</body>
+</html>
